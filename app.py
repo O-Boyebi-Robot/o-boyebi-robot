@@ -1,9 +1,9 @@
 from flask import Flask, request
-import os, requests
-from openai import OpenAI
+import os
+
 app = Flask(__name__)
-VERIFY_TOKEN = os.environ.get("VERIFY_TOKEN", "o_boyebi_2026")
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "o_boyebi_2026")
 
 @app.route("/")
 def home():
@@ -11,15 +11,16 @@ def home():
 
 @app.route("/webhook", methods=["GET"])
 def verify():
-    if request.args.get("hub.verify_token") == VERIFY_TOKEN:
-        return request.args.get("hub.challenge"), 200
-    return "Erreur", 403
+    mode = request.args.get("hub.mode")
+    token = request.args.get("hub.verify_token")
+    challenge = request.args.get("hub.challenge")
+    if mode == "subscribe" and token == VERIFY_TOKEN:
+        return challenge, 200
+    else:
+        return "Erreur", 403
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.get_json()
     print(data)
     return "ok", 200
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
