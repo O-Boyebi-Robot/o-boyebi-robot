@@ -5,9 +5,9 @@ from flask import Flask, request
 app = Flask(__name__)
 
 # --- CONFIG O BOYEBI ROBOT ---
-PAGE_ID = "1405069442685669" # Ton ID de la capture
+PAGE_ID = "1405069442685669"
 VERIFY_TOKEN = "o_boyebi_2026"
-PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN") # Pris depuis Render
+PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 
 @app.route('/', methods=['GET'])
 def home():
@@ -21,21 +21,21 @@ def verify():
     challenge = request.args.get("hub.challenge")
     
     if mode == "subscribe" and token == VERIFY_TOKEN:
-        print(f"WEBHOOK VERIFIÉ pour Page {PAGE_ID}")
+        print(f"WEBHOOK VERIFIE pour Page {PAGE_ID}")
         return challenge, 200
     else:
-        return "Erreur de vérification", 403
+        return "Erreur de verification", 403
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.get_json()
-    print(f"Message reçu pour Page {PAGE_ID}: {data}")
+    print(f"Message recu pour Page {PAGE_ID}: {data}")
 
     if data.get("object") == "page":
         for entry in data.get("entry", []):
-            # Vérifie que c'est bien ta Page
+            # Verifie que c'est bien ta Page
             if str(entry.get("id")) != PAGE_ID:
-                print(f"ID différent ignoré: {entry.get('id')}")
+                print(f"ID different ignore: {entry.get('id')}")
                 continue
 
             for event in entry.get("messaging", []):
@@ -54,7 +54,7 @@ def send_message(recipient_id, message_text):
         "message": {"text": message_text}
     }
     r = requests.post(url, json=payload)
-    print(f"Envoi réponse: {r.status_code} - {r.text}")
+    print(f"Envoi reponse: {r.status_code} - {r.text}")
     return r
 
 if __name__ == "__main__":
