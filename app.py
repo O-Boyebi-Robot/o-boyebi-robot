@@ -1,38 +1,52 @@
-import os, random, logging, requests
-from flask import Flask, request, jsonify
+from flask import Flask
 from apscheduler.schedulers.background import BackgroundScheduler
-app = Flask(__name__)
-PAGE_ID = "1405069442685669"
-VERIFY_TOKEN = "o_boyebi_2026"
-PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
+import requests, random, os
+
+application = Flask(__name__)
+
+# --- CONFIG ---
+ID_PAGE = "140509102234567"  # ton ID Page O Boyebi
+JETON = os.environ.get("FACEBOOK_TOKEN")  # Ton token sur Render
 POSTS_VIRAUX = [
- "LE SAVIEZ-VOUS ? Mbote bandeko ! Kinshasa est la plus grande ville francophone du monde !",
- "O Boyebi ? Commente O Boyebi si tu es fier d'etre Congolais !",
- "Debat du jour : Pondu, Fumbwa ou Madesu ?",
- "Mot du jour : Eloko veut dire Chose en Lingala.",
- "Histoire : Le fleuve Congo est le 2e plus puissant au monde !",
- "Question : Citez 3 provinces de la RDC ! Go !",
- "Bon debut de semaine a tous les Congolais !"
+    "Mbote bandeko ! Le saviez-vous ? Kinshasa est la plus grande ville francophone au monde ! 🇨🇩",
+    "Histoire : Le fleuve Congo est le 2e plus long d'Afrique après le Nil. 4.700 km de puissance !",
+    "Boyebi ? Le mot 'O Boyebi' veut dire 'Tu sais ?' en Lingala. Partage si tu es fier d'être Congolais !",
+    "Kinshasa La Belle ! Saviez-vous que Lola ya Bonobo est le seul sanctuaire de bonobos au monde ?",
+    "Culture : La Rumba Congolaise est classée patrimoine UNESCO. On danse ? 💃🏾"
 ]
-def publish_to_facebook(message):
-    if not PAGE_ACCESS_TOKEN: return {"error": "Token manquant"}
-    url = f"https://graph.facebook.com/v20.0/{PAGE_ID}/feed"
-    return requests.post(url, data={"message": message, "access_token": PAGE_ACCESS_TOKEN}).json()
+IMAGES = [
+    "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e",
+    "https://images.unsplash.com/photo-1523805009345-7448845a9e53",
+    "https://images.unsplash.com/photo-1489392191049-fc10c97e64b6"
+]
+
 def auto_publish_job():
-    publish_to_facebook(random.choice(POSTS_VIRAUX))
-scheduler = BackgroundScheduler(timezone="Africa/Kinshasa")
-scheduler.add_job(auto_publish_job, 'cron', hour=18, minute=0)
-scheduler.start()
-@app.route('/')
-def home(): return jsonify({"status": "LIVE", "service": "O Boyebi Robot V5 PRO"}), 200
-@app.route('/publish-viral')
-def publish_viral():
-    msg = random.choice(POSTS_VIRAUX)
-    return jsonify({"published": msg, "facebook_result": publish_to_facebook(msg)}), 200
-@app.route('/webhook', methods=['GET','POST'])
-def webhook():
-    if request.method == 'GET':
-        if request.args.get("hub.verify_token") == VERIFY_TOKEN:
-            return request.args.get("hub.challenge"), 200
-        return "Token invalide", 403
-    return "ok", 200
+    try:
+        texte = random.choice(POSTS_VIRAUX)
+        image_url = random.choice(IMAGES)
+        
+        # Publier PHOTO + TEXTE sur ta Page
+        url = f"https://graph.facebook.com/{ID_PAGE}/photos"
+        data = {"url": image_url, "caption": texte, "access_token": JETON}
+        r = requests.post(url, data=data)
+        print(f"V6 POSTÉ: {r.json()}")
+        return r.json()
+    except Exception as e:
+        print(f"Erreur V6: {e}")
+
+@application.route("/")
+def home():
+    return {"service": "O Boyebi Robot V6 IMAGE", "status": "LIVE", "version": "V6"}
+
+@application.route("/publish-viral")
+def publier_viral():
+    result = auto_publish_job()
+    return {"publié": result}
+
+# Planificateur - poste tous les jours à 08h00 heure de Kinshasa
+planificateur = BackgroundScheduler(timezone="Africa/Kinshasa")
+planificateur.add_job(auto_publish_job, 'cron', hour=8, minute=0)
+planificateur.start()
+
+if __name__ == "__main__":
+    application.run()
