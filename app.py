@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 # --- Configuration ---
 PAGE_ID = "1405099442685669"
-PAGE_ACCESS_TOKEN = os.environ.get("META_PAGE_ACCESS_TOKEN") or os.environ.get("FACEBOOK_TOKEN")
+PAGE_ACCESS_TOKEN = os.environ.get("META_PAGE_ACCESS_TOKEN") or os.environ.get("FACEBOOK_TOKEN") or os.environ.get("PAGE_ACCESS_TOKEN")
 GRAPH_API_VERSION = "v19.0"
 
 VIRAL_POSTS = [
