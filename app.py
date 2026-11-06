@@ -1,19 +1,27 @@
-from flask import Flask
+from flask import Flask, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
-import requests, random, os
+import requests
+import random
+import os
+import logging
 
-application = Flask(__name__)
+# --- Logging ---
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# --- CONFIG CORRIGEE ---
-ID_PAGE = "1405099442685669"  # Ton vrai ID O Boyebi Robot
-JETON = os.environ.get("META_PAGE_ACCESS_TOKEN") or os.environ.get("FACEBOOK_TOKEN")
+app = Flask(__name__)
 
-POSTS_VIRAUX = [
-    "Mbote bandeko ! Le saviez-vous ? Kinshasa est la plus grande ville francophone au monde ! 🇨🇩",
-    "Histoire : Le fleuve Congo est le 2e plus long d'Afrique apres le Nil. 4.700 km de puissance !",
-    "Boyebi ? Le mot 'O Boyebi' veut dire 'Tu sais ?' en Lingala. Partage si tu es fier d'etre Congolais !",
-    "Kinshasa La Belle ! Saviez-vous que Lola ya Bonobo est le seul sanctuaire de bonobos au monde ?",
-    "Culture : La Rumba Congolaise est classee patrimoine UNESCO. On danse ?"
+# --- Configuration ---
+PAGE_ID = "1405099442685669"
+PAGE_ACCESS_TOKEN = os.environ.get("META_PAGE_ACCESS_TOKEN") or os.environ.get("FACEBOOK_TOKEN")
+GRAPH_API_VERSION = "v19.0"
+
+VIRAL_POSTS = [
+    "Mbote bandeko! Did you know? Kinshasa is the largest French-speaking city in the world! 🇨🇩",
+    "History: The Congo River is the 2nd longest river in Africa after the Nile. 4,700 km of power!",
+    "Boyebi? The word 'O Boyebi' means 'Do you know?' in Lingala. Share if you are proud to be Congolese!",
+    "Kinshasa La Belle! Did you know Lola ya Bonobo is the only bonobo sanctuary in the world?",
+    "Culture: Congolese Rumba is UNESCO heritage. Let's dance?"
 ]
 
 IMAGES = [
@@ -22,34 +30,55 @@ IMAGES = [
     "https://images.unsplash.com/photo-1489392191049-fc10c97e64b6"
 ]
 
-def auto_publish_job():
-    if not JETON:
-        print("ERREUR: Token manquant")
-        return {"erreur": "Token manquant"}
+def publish_post():
+    """Publish a random viral post with image to Facebook Page."""
+    if not PAGE_ACCESS_TOKEN:
+        logger.error("Missing PAGE_ACCESS_TOKEN")
+        return {"error": "Missing PAGE_ACCESS_TOKEN"}
+
+    text = random.choice(VIRAL_POSTS)
+    image_url = random.choice(IMAGES)
+    url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{PAGE_ID}/photos"
+
+    payload = {
+        "url": image_url,
+        "caption": text,
+        "access_token": PAGE_ACCESS_TOKEN
+    }
+
     try:
-        texte = random.choice(POSTS_VIRAUX)
-        image_url = random.choice(IMAGES)
-        url = f"https://graph.facebook.com/v19.0/{ID_PAGE}/photos"
-        data = {"url": image_url, "caption": texte, "access_token": JETON}
-        r = requests.post(url, data=data, timeout=30)
-        print(f"V6 POSTE: {r.status_code} {r.json()}")
-        return r.json()
+        response = requests.post(url, data=payload, timeout=30)
+        result = response.json()
+        logger.info(f"Publish result: {response.status_code} {result}")
+        return result
     except Exception as e:
-        print(f"Erreur V6: {e}")
-        return {"erreur": str(e)}
+        logger.error(f"Publish error: {e}")
+        return {"error": str(e)}
 
-@application.route("/")
+@app.route("/")
 def home():
-    return {"service": "O Boyebi Robot V6 IMAGE", "status": "LIVE", "version": "V6.2", "page_id": ID_PAGE, "token_ok": bool(JETON)}
+    return jsonify({
+        "service": "O Boyebi Robot",
+        "status": "LIVE",
+        "version": "V7.0 Professional",
+        "page_id": PAGE_ID,
+        "token_configured": bool(PAGE_ACCESS_TOKEN)
+    })
 
-@application.route("/publish-viral")
-def publier_viral():
-    result = auto_publish_job()
-    return {"publie": result}
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
 
-planificateur = BackgroundScheduler(timezone="Africa/Kinshasa")
-planificateur.add_job(auto_publish_job, 'cron', hour=8, minute=0)
-planificateur.start()
+@app.route("/publish-viral")
+def publish_viral():
+    result = publish_post()
+    return jsonify({"published": result})
+
+# --- Scheduler: Every day at 08:00 Kinshasa time ---
+scheduler = BackgroundScheduler(timezone="Africa/Kinshasa")
+scheduler.add_job(publish_post, 'cron', hour=8, minute=0)
+scheduler.start()
 
 if __name__ == "__main__":
-    application.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
