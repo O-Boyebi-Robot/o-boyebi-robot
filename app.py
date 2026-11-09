@@ -15,7 +15,7 @@ PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN", "")
 PAGE_ID = os.getenv("PAGE_ID", "")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "o-boyebi-123")
 FB_BASE = "https://graph.facebook.com/v21.0"
-URL_GEMINI = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+URL_GEMINI = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
 THEMES = [
     "Motivation pour reussir au Congo",
