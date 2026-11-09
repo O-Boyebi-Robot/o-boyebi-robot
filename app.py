@@ -14,9 +14,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN", "")
 PAGE_ID = os.getenv("PAGE_ID", "")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "o-boyebi-123")
-FB_BASE = "https://graph.facebook.com/v21.0"
-URL_GEMINI = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
-
+FB_BASE = "https://graph.facebook.com/v21.0
+URL_GEMINI = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 THEMES = [
     "Motivation pour reussir au Congo",
     "Conseils pour entreprendre a Kinshasa",
@@ -29,18 +28,22 @@ THEMES = [
 
 def call_gemini(prompt):
     if not GEMINI_API_KEY:
+def call_gemini(prompt):
+    if not GEMINI_API_KEY:
         return "Salut, c'est O Boyebi ! Comment je peux t'aider ?"
     try:
         url = URL_GEMINI + "?key=" + GEMINI_API_KEY
         data = {"contents": [{"parts": [{"text": prompt}]}]}
         res = requests.post(url, json=data, timeout=30)
+        logger.error(f"GEMINI STATUS: {res.status_code} - {res.text[:500]}")
+        if res.status_code != 200:
+            return "Salut, c'est O Boyebi ! Je suis la pour toi."
         result = res.json()
         texte = result["candidates"][0]["content"]["parts"][0]["text"]
         return texte.strip()
     except Exception as e:
-        logger.error("Erreur Gemini")
+        logger.error(f"Erreur Gemini: {e}")
         return "Salut, c'est O Boyebi ! Je suis la pour toi."
-
 def generer_texte_post():
     theme = random.choice(THEMES)
     prompt = "Tu es O Boyebi, le createur le plus viral du Congo. Theme: " + theme + ". Ecris une publication Facebook virale en francais simple de Kinshasa avec un peu de Lingala. Commence avec un HOOK tres fort. Texte court, 3 a 5 phrases max. Ajoute 3 hashtags a la fin. Ton motivant et drole."
